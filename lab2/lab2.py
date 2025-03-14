@@ -2,15 +2,9 @@ import re
 import itertools
 
 
-# ------------------ Узел дерева ------------------ #
+'''' ------------------ Узел дерева ------------------ ''''
 class Node:
-    """
-    Узел дерева разбора.
-    node_type: 'var', 'not', 'and', 'or', 'implies', 'equiv'
-    left, right: дочерние узлы (для not: right=None)
-    var: имя переменной (если node_type == 'var')
-    expr_str: строковое представление подвыражения (будет сформировано позже)
-    """
+
     def __init__(self, node_type, left=None, right=None, var=None):
         self.node_type = node_type
         self.left = left
@@ -19,23 +13,15 @@ class Node:
         self.expr_str = None
 
 
-# ------------------ Шаг 1. Предобработка выражения ------------------ #
+'''' ------------------  Предобработка выражения ------------------ ''''
 def preprocess_expression(expr: str) -> str:
-    """
-    Убирает пробелы. Импликация обрабатывается как отдельный оператор.
-    """
+
     return expr.replace(" ", "")
 
 
-# ------------------ Шаг 2. Токенизация ------------------ #
+''''------------------  Токенизация ------------------ ''''
 def tokenize(expr: str):
-    """
-    Преобразует строку в список токенов:
-      - многосимвольный оператор "->"
-      - скобки, операторы !, &, |, ~
-      - переменные: a, b, c, d, e.
-    Символ "~" здесь трактуется как оператор эквиваленции.
-    """
+
     tokens = []
     i = 0
     while i < len(expr):
@@ -53,12 +39,9 @@ def tokenize(expr: str):
             i += 1
     return tokens
 
-
-# ------------------ Шаг 3. Сортировочная станция ------------------ #
+'''------------------ Сортировочная станция ------------------ '''
 def shunting_yard(tokens):
-    """
-    Преобразует список токенов в обратную польскую запись (ОПЗ).
-    Приоритеты (чем больше число – тем выше приоритет):
+   """"
       !       – 4 (унарный, правая ассоциативность)
       &       – 3
       |       – 2
@@ -110,7 +93,7 @@ def shunting_yard(tokens):
     return output_queue
 
 
-# ------------------ Шаг 4. Построение AST (дерева) ------------------ #
+'''------------------ Построение AST (дерева) ------------------ '''
 def rpn_to_ast(rpn_tokens):
     """
     По списку токенов в ОПЗ строим AST.
@@ -149,9 +132,7 @@ def rpn_to_ast(rpn_tokens):
 
 
 def parse_expression(expr: str) -> Node:
-    """
-    Полный цикл: предобработка, токенизация, сортировочная станция, построение AST.
-    """
+
     expr_prepared = preprocess_expression(expr)
     tokens = tokenize(expr_prepared)
     rpn = shunting_yard(tokens)
@@ -159,7 +140,7 @@ def parse_expression(expr: str) -> Node:
     return ast
 
 
-# ------------------ Шаг 5. Формирование строк подвыражений ------------------ #
+'''------------------  Формирование строк подвыражений ------------------ '''
 def label_sub_expressions(root: Node) -> None:
     if root.node_type == 'var':
         root.expr_str = root.var
@@ -211,11 +192,9 @@ def label_sub_expressions(root: Node) -> None:
         root.expr_str = f"{left_s}↔{right_s}"
 
 
-# ------------------ Дополнительно: вычисление глубины узла ------------------ #
+'''------------------ вычисление глубины узла ------------------ '''
 def compute_depth(node: Node) -> int:
-    """
-    Рекурсивно вычисляет глубину узла (глубина переменной = 1, для бинарных узлов – max глубины детей + 1).
-    """
+
     if node.node_type == 'var':
         return 1
     elif node.node_type == 'not':
@@ -224,15 +203,9 @@ def compute_depth(node: Node) -> int:
         return max(compute_depth(node.left), compute_depth(node.right)) + 1
 
 
-# ------------------ Шаг 6. Сбор подвыражений для таблицы ------------------ #
+'''------------------ Сбор подвыражений для таблицы ------------------ '''
 def collect_sub_expressions_in_order(root: Node):
-    """
-    Возвращает список узлов (Node) без повторений.
-    Для формирования столбцов таблицы:
-      – переменные (узлы с типом 'var') собираются отдельно и сортируются по алфавиту,
-      – комплексные подвыражения сортируются по их глубине (от простых к более сложным),
-      – полный вид (корневой узел) выводится в последнюю колонку.
-    """
+
     visited = {}
     result = []
 
@@ -259,11 +232,9 @@ def collect_sub_expressions_in_order(root: Node):
     return result
 
 
-# ------------------ Шаг 7. Вычисление значения выражения ------------------ #
+'''------------------  Вычисление значения выражения ------------------ '''
 def evaluate_ast(root: Node, env: dict) -> bool:
-    """
-    Рекурсивно вычисляет значение выражения (AST) при заданном окружении env (словарь переменных).
-    """
+
     if root.node_type == 'var':
         return env[root.var]
     elif root.node_type == 'not':
@@ -273,33 +244,19 @@ def evaluate_ast(root: Node, env: dict) -> bool:
     elif root.node_type == 'or':
         return evaluate_ast(root.left, env) or evaluate_ast(root.right, env)
     elif root.node_type == 'implies':
-        # Импликация: A→B эквивалентно ¬A ∨ B
         return (not evaluate_ast(root.left, env)) or evaluate_ast(root.right, env)
     elif root.node_type == 'equiv':
-        # Эквиваленция: A↔B истинна, когда A и B имеют одинаковые значения
         return evaluate_ast(root.left, env) == evaluate_ast(root.right, env)
     else:
         raise ValueError("Неизвестный тип узла")
 
 
-# ------------------ Шаг 8. Генерация таблицы истинности и вычисление форм ------------------ #
+'''------------------ Генерация таблицы истинности и вычисление форм ------------------ '''
 def generate_truth_table_and_forms(expr: str):
-    """
-    Парсит выражение, строит таблицу истинности с подвыражениями, а затем:
-      - формирует числовую форму СДНФ (сумма минтермов) и СКНФ (произведение макстермов),
-      - строит совершенные нормальные формы (СДНФ и СКНФ) с символами ¬, ∧, ∨,
-      - выводит индексную форму функции.
 
-    При выводе таблицы подвыражений:
-      – переменные выводятся в алфавитном порядке,
-      – затем комплексные подвыражения (отсортированные по глубине),
-      – и, наконец, полное выражение (корневой узел).
-    """
-    # 1. Построить дерево и задать строковое представление подвыражений
     ast = parse_expression(expr)
     label_sub_expressions(ast)
 
-    # 2. Собрать подвыражения для столбцов таблицы:
     all_nodes = collect_sub_expressions_in_order(ast)
     var_nodes = [n for n in all_nodes if n.node_type == 'var']
     complex_nodes = [n for n in all_nodes if n.node_type != 'var']
@@ -311,16 +268,14 @@ def generate_truth_table_and_forms(expr: str):
     else:
         columns = var_nodes_sorted
 
-    # 3. Вывести заголовок таблицы истинности
     header = " | ".join(node.expr_str for node in columns)
     print(header)
     print("-" * len(header))
 
-    # 4. Для вычисления индексной формы берём переменные в алфавитном порядке.
     vars_sorted = [n.var for n in var_nodes_sorted]
     n_vars = len(vars_sorted)
 
-    truth_rows = []  # Список: (комбинация значений, f)
+    truth_rows = []
     index_bits = []
     for combo in itertools.product([0, 1], repeat=n_vars):
         env = {var: bool(val) for var, val in zip(vars_sorted, combo)}
@@ -332,7 +287,6 @@ def generate_truth_table_and_forms(expr: str):
         index_bits.append("1" if f_val else "0")
         print(" | ".join(row_vals))
 
-    # 5. Вычисляем минтермы и макстермы (числовые формы)
     minterms = []  # для f=1
     maxterms = []  # для f=0
     for combo, f_val in truth_rows:
@@ -342,7 +296,6 @@ def generate_truth_table_and_forms(expr: str):
         else:
             maxterms.append(index)
 
-    # 6. Построение совершенных нормальных форм (СДНФ и СКНФ)
     dnf_terms = []
     cnf_terms = []
     for combo, f_val in truth_rows:
@@ -359,12 +312,10 @@ def generate_truth_table_and_forms(expr: str):
     dnf_formula = " ∨ ".join(dnf_terms)
     cnf_formula = " ∧ ".join(cnf_terms)
 
-    # 7. Вычисление индексной формы
     binary_str = "".join(index_bits)
     index_value = int(binary_str, 2)
     binary_str_padded = format(index_value, f"0{2 ** n_vars}b")
 
-    # 8. Вывод числовых форм и индексной формы
     print("\nСовершенная дизъюнктивная нормальная форма (СДНФ)")
     print(dnf_formula)
     print("\nСовершенная конъюнктивная нормальная форма (СКНФ)")
@@ -377,7 +328,6 @@ def generate_truth_table_and_forms(expr: str):
     print("\nИндексная форма")
     print(f"{index_value} - {binary_str_padded}")
 
-    # Добавляем возврат результата для целей тестирования
     return {
         'minterms': sorted(minterms),
         'maxterms': sorted(maxterms),
