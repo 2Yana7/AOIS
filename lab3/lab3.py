@@ -836,9 +836,7 @@ def kmap_minimize(terms, n_vars, vars_, is_dnf=True):
     return out
 
 def print_kmap_table(terms, n_vars, vars_, is_dnf=True):
-    """
-    Печатает ASCII-карту Карно с подписями переменных.
-    """
+
     r = n_vars // 2
     c = n_vars - r
     row_codes = gray_code(r)
@@ -895,11 +893,11 @@ def main():
     print("\n======= Итоговый рез =======")
 
     print("\nРезультаты минимизации для СДНФ:")
-    print("  1) Расчетный метод (Куайн–МакКласки):", dnf_calc)
+    print("  1) Расчетный метод:", dnf_calc)
     print("  2) Расчетно-табличный метод:         ", dnf_tab)
     print("  3) Метод Карно:                      ",  " ∨ ".join(dnf_kmap))
     print("\nРезультаты минимизации для СКНФ:")
-    print("  1) Расчетный метод (Куайн–МакКласки):", cnf_calc)
+    print("  1) Расчетный метод:", cnf_calc)
     print("  2) Расчетно-табличный метод:         ", cnf_tab)
     print("  3) Метод Карно:                      ", " ∧ ".join(cnf_kmap))
 
