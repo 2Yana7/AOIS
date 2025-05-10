@@ -2,7 +2,7 @@ import unittest
 import io
 import contextlib
 
-from lab6 import HashTable, parse_value  # замените hash_table на имя вашего файла без .py
+from lab6 import HashTable, parse_value  
 
 class TestHashTable(unittest.TestCase):
     def test_min_capacity(self):
