@@ -1,4 +1,4 @@
-# zadanie_2_fixed.py
+
 
 def decimal_to_bcd8421(d):
     return [(d >> i) & 1 for i in reversed(range(4))]

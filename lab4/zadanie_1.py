@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 import re
 import itertools
 import math
 
-# Параметры задачи
 vars = ['X1', 'X2', 'X3']
 rows = [
     (0,0,0, 0,0),
@@ -17,16 +15,12 @@ rows = [
 ]
 
 def to_bin(n, width):
-    """Число n в двоичную строку ширины width."""
     return format(n, f'0{width}b')
 
 def count_bits(s, ch):
-    """Считает вхождения символа ch в строке s."""
     return len(re.findall(ch, s))
 
 def combine_terms(a, b):
-    """Если строки a и b (равной длины) отличаются ровно в одном бите,
-    возвращает объединённый шаблон с '-', иначе None."""
     diff = 0
     out = []
     for ca, cb in zip(a, b):
@@ -40,16 +34,13 @@ def combine_terms(a, b):
     return ''.join(out)
 
 def find_prime_implicants(minterms, num_vars):
-    """Группирует по количеству единиц, сворачивает соседние группы,
-    собирает непросвёрнутые прайм-импликанты."""
-    # начальная группировка
+
     groups = {}
     for m in minterms:
         b = to_bin(m, num_vars)
         cnt = count_bits(b, '1')
         groups.setdefault(cnt, set()).add(b)
     primes = set()
-    # повторяем, пока есть что сворачивать
     while groups:
         new_groups = {}
         used = set()
@@ -62,7 +53,6 @@ def find_prime_implicants(minterms, num_vars):
                     used.add(a); used.add(b)
                     k = count_bits(c, '1')
                     new_groups.setdefault(k, set()).add(c)
-        # все, что не попало в used — простые импликанты
         for grp in groups.values():
             for term in grp:
                 if term not in used:
